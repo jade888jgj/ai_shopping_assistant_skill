@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 购物决策助手 · 帮你从想买到敢买</title>
+<style>
+  :root{
+    --bg:#f3f4fb; --card:#fff; --ink:#1c2340; --muted:#6b7390; --line:#e7e9f4;
+    --brand:#5b5bd6; --brand-2:#8b5cf6; --brand-soft:#efeefe;
+    --ok:#16a34a; --ok-soft:#e7f6ec; --warn:#d97706; --warn-soft:#fdf1e0;
+    --bad:#dc2626; --bad-soft:#fdeaea; --shadow:0 10px 30px rgba(40,45,90,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.7;min-height:100vh;display:flex;flex-direction:column}
+  button{font-family:inherit}
+
+  .topbar{background:linear-gradient(120deg,#5b5bd6,#8b5cf6 60%,#a855f7);padding:18px 24px;display:flex;align-items:center;gap:14px;color:#fff;box-shadow:var(--shadow)}
+  .logo{font-weight:800;font-size:20px;white-space:nowrap;letter-spacing:.2px}
+  .logo .ico{font-size:22px}
+  .topbar .slogan{margin-left:auto;font-size:12.5px;opacity:.92;text-align:right;white-space:nowrap}
+
+  .progress{display:flex;align-items:center;justify-content:center;padding:22px 20px 0;max-width:780px;margin:0 auto}
+  .p-node{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex:none}
+  .p-dot{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:14px;
+    background:#fff;border:2px solid var(--line);color:var(--muted);transition:.2s}
+  .p-node.active .p-dot{background:linear-gradient(135deg,var(--brand),var(--brand-2));border-color:transparent;color:#fff;box-shadow:0 4px 14px rgba(91,91,214,.4)}
+  .p-node.done .p-dot{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+  .p-node .p-label{font-size:11.5px;color:var(--muted);white-space:nowrap;font-weight:600}
+  .p-node.active .p-label{color:var(--brand);font-weight:700}
+  .p-line{flex:1;height:2px;background:var(--line);margin:0 2px;margin-bottom:22px;transition:.3s;max-width:72px}
+  .p-line.done{background:var(--ok)}
+
+  .stage{flex:1;display:flex;align-items:center;justify-content:center;padding:20px}
+  .slide{display:none;width:100%;max-width:900px;background:var(--card);border:1px solid var(--line);
+    border-radius:20px;box-shadow:var(--shadow);padding:34px 38px;animation:in .28s ease}
+  .slide.active{display:block}
+  @keyframes in{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+
+  .slide-head{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  .step-num{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,var(--brand),var(--brand-2));
+    color:#fff;display:grid;place-items:center;font-weight:800;font-size:19px;flex:none;box-shadow:0 4px 12px rgba(91,91,214,.3)}
+  .slide-head h2{font-size:21px;font-weight:800}
+  .slide-sub{color:var(--muted);font-size:13.5px;margin:6px 0 20px}
+
+  .card{background:#fafaff;border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:12px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:10px 11px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:12px;color:var(--muted);font-weight:700;background:#fff}
+  tr:last-child td{border-bottom:none}
+  .muted{color:var(--muted);font-size:12px}
+  .price{font-weight:800;color:var(--brand)}
+  .price.min{color:var(--ok)}
+  .badge{display:inline-block;font-size:11.5px;padding:3px 9px;border-radius:7px;font-weight:700;white-space:nowrap}
+  .b-ok{background:var(--ok-soft);color:var(--ok)}
+  .b-warn{background:var(--warn-soft);color:var(--warn)}
+  .b-bad{background:var(--bad-soft);color:var(--bad)}
+  .b-brand{background:var(--brand-soft);color:var(--brand)}
+  .scorebar{height:8px;background:var(--line);border-radius:999px;overflow:hidden;min-width:70px}
+  .scorebar i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),var(--brand-2))}
+
+  .profile{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:14px}
+  @media(max-width:600px){.profile{grid-template-columns:1fr}}
+  .profile .item{background:#fff;border:1px solid var(--line);border-radius:11px;padding:11px 14px;display:flex;gap:8px;align-items:center}
+  .profile .item .k{font-weight:800;color:var(--brand);white-space:nowrap}
+  .profile .item .v{color:var(--ink)}
+  .callout{border-left:3px solid var(--brand);background:var(--brand-soft);border-radius:0 11px 11px 0;padding:13px 16px;font-size:13.5px;margin-top:12px}
+  .callout.warn{border-color:var(--warn);background:var(--warn-soft)}
+  .callout.bad{border-color:var(--bad);background:var(--bad-soft)}
+  .callout.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .callout b{display:block;margin-bottom:3px}
+
+  .vs-title{display:flex;gap:12px;font-size:13.5px;color:var(--muted);margin-bottom:10px;font-weight:700;align-items:center}
+  .vs-title b{color:var(--ink);font-size:14px}
+  .dim-bar{height:24px;border-radius:8px;overflow:hidden;background:var(--bg);display:flex;min-width:220px}
+  .dim-bar .a{background:linear-gradient(90deg,var(--brand),var(--brand-2));color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;padding-left:9px}
+  .dim-bar .b{background:#e3e6f1;color:var(--ink);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:flex-end;padding-right:9px}
+  .win{font-weight:800;color:var(--ok)}
+
+  .rec{display:flex;flex-direction:column;gap:11px}
+  .rec-item{border:1px solid var(--line);border-radius:13px;padding:15px 17px}
+  .rec-item.gold{border-color:#f6c343;background:#fffcf1}
+  .rec-item.silver{border-color:#b9c2fb;background:#fafaff}
+  .rec-item.avoid{border-color:#f8b4b4;background:#fff7f7}
+  .rec-item .top{display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap}
+  .rec-item .medal{font-size:19px}
+  .rec-item b{font-size:14.5px}
+  .rec-item p{font-size:13px;color:var(--muted)}
+  .rec-item .why{color:var(--ink)}
+
+  .field{margin-bottom:13px}
+  .field label{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:6px}
+  .field input,.field select{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px;color:var(--ink);outline:none;background:#fff}
+  .field input:focus,.field select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .hero-line{font-size:15px;line-height:1.8}
+  .hero-line b{color:var(--brand)}
+  .feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  @media(max-width:600px){.feat-grid{grid-template-columns:1fr}}
+  .feat{background:#fff;border:1px solid var(--line);border-radius:11px;padding:12px 14px;font-size:13px;display:flex;gap:9px;align-items:flex-start}
+  .feat .fi{font-size:18px;flex:none}
+
+  .footer{display:flex;justify-content:center;gap:12px;padding:8px 20px 30px;max-width:900px;margin:0 auto;width:100%}
+  .btn{padding:12px 28px;border-radius:12px;border:1px solid var(--line);background:#fff;font-size:14.5px;font-weight:700;cursor:pointer;transition:.15s;color:var(--ink)}
+  .btn:hover{border-color:var(--brand)}
+  .btn.primary{background:linear-gradient(90deg,var(--brand),var(--brand-2));color:#fff;border:none;box-shadow:0 4px 14px rgba(91,91,214,.35)}
+  .btn.primary:hover{opacity:.92}
+  .btn:disabled{opacity:.35;cursor:not-allowed}
+  .step-ind{font-size:12.5px;color:var(--muted);align-self:center;padding:0 6px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><span class="ico">🛒</span> AI 购物决策助手</div>
+  <div class="slogan">从「想买」到「敢买」· 安全优先 · 不编价格</div>
+</div>
+
+<div class="progress" id="progress"></div>
+
+<div class="stage">
+
+  <!-- 开始页 -->
+  <section class="slide active" data-idx="0">
+    <div class="slide-head"><div class="step-num">🛒</div><h2>买什么？先告诉我</h2></div>
+    <div class="slide-sub">本助手按 5 步帮你做购物决策：深挖需求 → 筛选产品 → 深度对比 → 五平台比价 → 生成报告</div>
+
+    <div class="hero-line">
+      本 <b>AI 购物决策助手</b>，帮你把「想买」变成「敢买」。你只需告诉它<b>想买什么、预算多少、用在哪</b>，它会：
+    </div>
+    <div class="feat-grid">
+      <div class="feat"><span class="fi">🔍</span><div><b>深挖需求</b><br><span class="muted">问清谁用、放哪、多久一次，帮你想到没想到的坑</span></div></div>
+      <div class="feat"><span class="fi">🏆</span><div><b>筛选产品</b><br><span class="muted">从海量商品里筛出靠谱候选，单独挖差评，太完美反而假</span></div></div>
+      <div class="feat"><span class="fi">⚖️</span><div><b>深度对比</b><br><span class="muted">6 维度面对面拆解，每个维度给明确优胜方</span></div></div>
+      <div class="feat"><span class="fi">💰</span><div><b>五平台比价</b><br><span class="muted">京东 / 淘宝 / 拼多多 / 抖音 / 得物，找最便宜可信的店</span></div></div>
+      <div class="feat"><span class="fi">📋</span><div><b>生成报告</b><br><span class="muted">推荐哪个、备选哪个、为什么，写明白不甩「都可以」</span></div></div>
+      <div class="feat"><span class="fi">🛡️</span><div><b>守住底线</b><br><span class="muted">安全优先、不编价格、不替你做主，只给最靠谱的推荐</span></div></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="field"><label>我想买什么</label><input id="in-category" value="降噪头戴式耳机"></div>
+      <div class="field"><label>预算（¥）</label><input id="in-budget" value="300 以内"></div>
+      <div class="field"><label>场景 / 用途</label><input id="in-scene" value="宿舍 + 通勤，学生党预算敏感"></div>
+    </div>
+    <div class="callout">💡 点击下方「下一步」，一步步看它如何帮你做决策。</div>
+  </section>
+
+  <!-- ① 需求深挖 -->
+  <section class="slide" data-idx="1">
+    <div class="slide-head"><div class="step-num">1</div><h2>需求深挖</h2></div>
+    <div class="slide-sub">不急着推产品，先问对人 —— 谁用 · 放哪儿 · 多久一次 · 预算 · 最怕什么</div>
+    <div class="card">
+      <div class="profile">
+        <div class="item"><span class="k">谁用</span><span class="v">自己（学生 / 通勤）</span></div>
+        <div class="item"><span class="k">放哪儿</span><span class="v">宿舍 / 地铁，需便携</span></div>
+        <div class="item"><span class="k">多久一次</span><span class="v">每天约 1–2 小时</span></div>
+        <div class="item"><span class="k">预算上限</span><span class="v bdg">¥300 以内</span></div>
+      </div>
+      <div class="callout">
+        <b>💡 帮你想到你没想到的</b>
+        ① <b>该不该买</b>：宿舍 + 通勤降噪是真实刚需，✅ 合理。<br>
+        ② <b>场景坑</b>：地铁低频噪音重 → 选<b>主动降噪(ANC)</b>，别只看「隔音耳罩」；宿舍用看重<b>续航</b>（省得天天充电）。<br>
+        ③ <b>预算敏感提醒</b>：300 元内是「入门级 ANC」，别期待千元旗舰的降噪深度，重点选<b>品牌靠谱、品控稳</b>的，避开百元以下杂牌。
+      </div>
+    </div>
+  </section>
+
+  <!-- ② 产品筛选 -->
+  <section class="slide" data-idx="2">
+    <div class="slide-head"><div class="step-num">2</div><h2>产品筛选</h2></div>
+    <div class="slide-sub">按「品牌靠谱度」筛掉杂牌 → 三档分组 → 打分排名 → 单独挖差评</div>
+    <div class="card">
+      <table>
+        <thead><tr><th>档位</th><th>型号</th><th>参考价</th><th>品牌</th><th>推荐度</th><th>结论</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="badge b-brand">主流</span></td>
+            <td><b>漫步者 MT6PRO</b><br><span class="muted">主动降噪 · 三平台有售</span></td>
+            <td><span class="price">¥188–218</span></td>
+            <td>漫步者（声学老牌）</td>
+            <td><div class="scorebar"><i style="width:88%"></i></div><span class="muted">4.4/5</span></td>
+            <td><span class="badge b-ok">首选</span></td>
+          </tr>
+          <tr>
+            <td><span class="badge b-brand">主流</span></td>
+            <td><b>漫步者 Fit900NB</b><br><span class="muted">主动降噪 · 京东</span></td>
+            <td><span class="price">¥248</span></td>
+            <td>漫步者</td>
+            <td><div class="scorebar"><i style="width:82%"></i></div><span class="muted">4.1/5</span></td>
+            <td><span class="badge b-brand">备选</span></td>
+          </tr>
+          <tr>
+            <td><span class="badge b-ok">百元档</span></td>
+            <td><b>iKF King2.0</b><br><span class="muted">主动降噪 · 淘宝</span></td>
+            <td><span class="price">¥169</span></td>
+            <td>iKF</td>
+            <td><div class="scorebar"><i style="width:80%"></i></div><span class="muted">4.0/5</span></td>
+            <td><span class="badge b-brand">备选</span></td>
+          </tr>
+          <tr>
+            <td><span class="badge b-ok">进阶</span></td>
+            <td><b>iKF Nano</b><br><span class="muted">主动降噪 · 得物 / 抖音</span></td>
+            <td><span class="price">¥286–298</span></td>
+            <td>iKF</td>
+            <td><div class="scorebar"><i style="width:78%"></i></div><span class="muted">3.9/5</span></td>
+            <td><span class="badge b-brand">备选</span></td>
+          </tr>
+          <tr>
+            <td><span class="badge b-ok">进阶</span></td>
+            <td><b>漫步者 W820NB</b><br><span class="muted">主动降噪 · 得物</span></td>
+            <td><span class="price">¥306</span></td>
+            <td>漫步者</td>
+            <td><div class="scorebar"><i style="width:78%"></i></div><span class="muted">3.9/5</span></td>
+            <td><span class="badge b-brand">备选</span></td>
+          </tr>
+          <tr>
+            <td><span class="badge b-bad">百元下</span></td>
+            <td><b>联想入门款</b><br><span class="muted">拼多多 / 京东</span></td>
+            <td><span class="price">¥59–88</span></td>
+            <td>联想（贴牌）</td>
+            <td><div class="scorebar"><i style="width:45%"></i></div><span class="muted">2.3/5</span></td>
+            <td><span class="badge b-bad">谨慎</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="muted" style="margin-top:10px">* 价格为你在五平台采集的真实到手价；推荐度为基于品牌口碑与价位的综合判断。</p>
+    </div>
+    <div class="callout bad"><b>🔍 差评专项</b>规则：<b>太完美反而假</b> —— 差评率异常低、好评千篇一律、晒图雷同 → 标「疑似刷评」降权。<br>· <b>联想入门款</b>：¥59 远低于市场均价，多为贴牌代工，无明确 ANC 参数，<b>谨慎</b>。<br>· <b>漫步者 / iKF</b>：有真实销量与追评基础，属可筛选的靠谱候选。</div>
+  </section>
+
+  <!-- ③ 深度对比 -->
+  <section class="slide" data-idx="3">
+    <div class="slide-head"><div class="step-num">3</div><h2>深度对比</h2></div>
+    <div class="slide-sub">两款主力正面拆解：iKF King2.0（百元档）vs 漫步者 MT6PRO（主流档）</div>
+    <div class="card">
+      <div class="vs-title"><span><b>🅐 iKF King2.0</b>（¥169）</span><span>vs</span><span><b>🅑 漫步者 MT6PRO</b>（¥188–218）</span></div>
+      <table>
+        <thead><tr><th style="width:64px">维度</th><th>拆什么</th><th style="width:240px">对比</th><th>优胜方</th></tr></thead>
+        <tbody>
+          <tr><td>质量</td><td>品控 / 耐用 / 做工</td><td><div class="dim-bar"><div class="a" style="width:45%">iKF 45</div><div class="b" style="width:55%">55</div></div></td><td><span class="win">漫步者 ✅</span></td></tr>
+          <tr><td>功能</td><td>降噪深度 / 音质</td><td><div class="dim-bar"><div class="a" style="width:44%">44</div><div class="b" style="width:56%">56</div></div></td><td><span class="win">漫步者 ✅</span></td></tr>
+          <tr><td>质价比</td><td>同价位下的表现</td><td><div class="dim-bar"><div class="a" style="width:56%">56</div><div class="b" style="width:44%">44</div></div></td><td><span class="win">iKF ✅</span></td></tr>
+          <tr><td>口碑</td><td>真实评价 / 追评</td><td><div class="dim-bar"><div class="a" style="width:47%">47</div><div class="b" style="width:53%">53</div></div></td><td><span class="win">漫步者 ✅</span></td></tr>
+          <tr><td>售后</td><td>退换 / 保修 / 网点</td><td><div class="dim-bar"><div class="a" style="width:42%">42</div><div class="b" style="width:58%">58</div></div></td><td><span class="win">漫步者 ✅</span></td></tr>
+          <tr><td>设计</td><td>颜值 / 年轻感</td><td><div class="dim-bar"><div class="a" style="width:55%">55</div><div class="b" style="width:45%">45</div></div></td><td><span class="win">iKF ✅</span></td></tr>
+        </tbody>
+      </table>
+      <div class="callout"><b>🧭 按场景给建议</b>追求<b>极致便宜 + 颜值年轻</b> → 选 <b>iKF King2.0（¥169）</b>；追求<b>品控稳 + 售后省心 + 降噪更扎实</b>，多花二三十元 → 选 <b>漫步者 MT6PRO（¥188 起）</b>。不是「各有千秋」，是按你的侧重点给唯一方向。</div>
+    </div>
+  </section>
+
+  <!-- ④ 渠道比价（型号×平台矩阵） -->
+  <section class="slide" data-idx="4">
+    <div class="slide-head"><div class="step-num">4</div><h2>渠道比价</h2></div>
+    <div class="slide-sub">型号 × 五平台真实到手价（采集自你提供的数据），标绿为各型号最便宜渠道</div>
+    <div class="card">
+      <table>
+        <thead><tr><th>型号</th><th>拼多多</th><th>淘宝</th><th>京东</th><th>抖音</th><th>得物</th></tr></thead>
+        <tbody>
+          <tr><td><b>iKF King2.0</b></td><td class="muted">—</td><td><span class="price min">¥169</span></td><td class="muted">—</td><td class="muted">—</td><td class="muted">—</td></tr>
+          <tr><td><b>漫步者 MT6PRO</b></td><td><span class="price min">¥188</span></td><td>¥218</td><td class="muted">—</td><td>¥198</td><td class="muted">—</td></tr>
+          <tr><td><b>漫步者 Fit900NB</b></td><td class="muted">—</td><td class="muted">—</td><td><span class="price min">¥248</span></td><td class="muted">—</td><td class="muted">—</td></tr>
+          <tr><td><b>iKF Nano</b></td><td class="muted">—</td><td class="muted">—</td><td class="muted">—</td><td>¥298</td><td><span class="price min">¥286</span></td></tr>
+          <tr><td><b>漫步者 W820NB</b></td><td class="muted">—</td><td class="muted">—</td><td class="muted">—</td><td class="muted">—</td><td><span class="price min">¥306</span></td></tr>
+          <tr><td><b>联想入门款</b></td><td>¥59–88</td><td class="muted">—</td><td><span class="price min">¥60</span></td><td class="muted">—</td><td class="muted">—</td></tr>
+        </tbody>
+      </table>
+      <p class="muted" style="margin-top:8px">「—」= 该平台未采集到同款（不编价）。</p>
+      <div class="callout warn"><b>📱 重要提醒：核对到手价</b>网页标价 ≠ 领券后到手价，跨账号 / 地区 / 促销有差异。<b>下单前打开 App 核对最终到手价</b>。未采集到的平台就直说「未收录」，不编价。</div>
+      <div class="callout ok"><b>🏆 渠道结论</b>· 想买 <b>漫步者 MT6PRO</b> → 拼多多 ¥188 最便宜（次选抖音 ¥198）；· 想买 <b>iKF King2.0</b> → 淘宝 ¥169；· 想买 <b>iKF Nano</b> → 得物 ¥286 比抖音便宜 12。</div>
+    </div>
+  </section>
+
+  <!-- ⑤ 报告生成 -->
+  <section class="slide" data-idx="5">
+    <div class="slide-head"><div class="step-num">5</div><h2>报告生成</h2></div>
+    <div class="slide-sub">推荐哪个、备选哪个、为什么 —— 写明白，不甩「都可以」</div>
+    <div class="card"><div class="rec">
+      <div class="rec-item gold">
+        <div class="top"><span class="medal">🥇</span><b>首选：漫步者 MT6PRO</b><span class="badge b-brand">@ 拼多多 ¥188</span></div>
+        <p class="why"><b>为什么是它：</b>声学老牌、品控稳、售后网点多；188 元起比 iKF 只贵十几块，却换来更扎实的降噪和做工。匹配你「预算敏感但不想踩坑」的核心诉求。</p>
+      </div>
+      <div class="rec-item silver">
+        <div class="top"><span class="medal">🥈</span><b>备选：iKF King2.0</b><span class="badge b-brand">@ 淘宝 ¥169</span></div>
+        <p class="why"><b>如果</b>你就是想把预算压到最低、且更看重年轻颜值 → 选它，169 元是百元档最稳的选择。</p>
+      </div>
+      <div class="rec-item silver">
+        <div class="top"><span class="medal">🥉</span><b>进阶备选：iKF Nano</b><span class="badge b-brand">@ 得物 ¥286</span></div>
+        <p class="why"><b>如果</b>你愿意多花 100 上到 280–300 档、想要更好的降噪和做工 → 选它（或漫步者 W820NB ¥306）。</p>
+      </div>
+      <div class="rec-item avoid">
+        <div class="top"><span class="medal">⚠️</span><b>谨慎：联想入门款</b><span class="badge b-bad">¥59–88</span></div>
+        <p>¥59 远低于主流 ANC 价格，多为贴牌代工、无明确降噪参数。<b>不建议作为降噪耳机购买</b>，除非只是要个「能响的头戴」。</p>
+      </div>
+    </div></div>
+    <div class="callout"><b>📋 决策建议</b>按你的痛点优先级（靠谱 &gt; 便宜 &gt; 颜值），<b>漫步者 MT6PRO（拼多多 ¥188）</b> 是明确首选：多花十几块买品牌和品控，性价比最高。预算卡死就上 <b>iKF King2.0（¥169）</b>。下单前回 App 核对到手价。</div>
+  </section>
+
+  <!-- 完成页 -->
+  <section class="slide" data-idx="6">
+    <div class="slide-head"><div class="step-num">✓</div><h2>决策完成</h2></div>
+    <div class="slide-sub">以上就是完整的 5 步购物决策流程</div>
+    <div class="card" style="text-align:center;padding:30px">
+      <div style="font-size:44px">🎉</div>
+      <p style="font-size:15px;margin-top:10px">5 步流水线：<b>需求深挖 → 产品筛选 → 深度对比 → 渠道比价 → 报告生成</b></p>
+      <p class="muted" style="margin-top:8px">真实使用时由 Claude Code 运行 <b>SKILL.md</b>，可联网搜索 / 抓取 / 读图，针对任意品类真实执行。</p>
+    </div>
+  </section>
+</div>
+
+<div class="footer">
+  <button class="btn" id="prevBtn" onclick="go(-1)">← 上一步</button>
+  <span class="step-ind" id="stepInd"></span>
+  <button class="btn primary" id="nextBtn" onclick="go(1)">下一步 →</button>
+</div>
+
+<script>
+  const TOTAL = 7;
+  const LABELS = ['需求深挖','产品筛选','深度对比','渠道比价','报告生成'];
+  let cur = 0;
+
+  function render(){
+    document.querySelectorAll('.slide').forEach((s,i)=>s.classList.toggle('active', i===cur));
+    document.getElementById('prevBtn').disabled = (cur===0);
+    const nb = document.getElementById('nextBtn');
+    nb.textContent = (cur===TOTAL-1) ? '🔁 重新来一次' : '下一步 →';
+    document.getElementById('stepInd').textContent = (cur+1) + ' / ' + TOTAL;
+    renderProgress();
+  }
+  function renderProgress(){
+    const p = document.getElementById('progress');
+    let html='';
+    for(let i=1;i<=5;i++){
+      const state = (i-1 < cur) ? 'done' : (i-1===cur ? 'active' : '');
+      if(i>1) html += `<div class="p-line ${(i-1<=cur)?'done':''}"></div>`;
+      html += `<div class="p-node ${state}" onclick="jump(${i})"><div class="p-dot">${(i-1<cur)?'✓':i}</div><div class="p-label">${LABELS[i-1]}</div></div>`;
+    }
+    p.innerHTML = html;
+  }
+  function jump(i){ cur = Math.max(0, Math.min(TOTAL-1, i)); render(); }
+  function go(d){
+    if(cur+d < 0) return;
+    if(cur+d > TOTAL-1){ cur=0; render(); return; }
+    cur += d; render();
+  }
+  function applyInput(){
+    const budget = document.getElementById('in-budget').value.trim() || '300 以内';
+    document.querySelectorAll('.bdg').forEach(e=>e.textContent = '¥'+budget);
+  }
+  document.getElementById('in-budget').addEventListener('input', applyInput);
+
+  render();
+</script>
+</body>
+</html>
