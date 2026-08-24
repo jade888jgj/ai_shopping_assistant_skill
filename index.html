@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 购物决策助手 · 模范回答模板（降噪耳机）</title>
+<style>
+  :root{
+    --bg:#f5f6fb; --card:#fff; --ink:#1c2340; --muted:#6b7390; --line:#e6e8f2;
+    --brand:#5b5bd6; --brand-2:#8b5cf6; --brand-soft:#efeffc;
+    --ok:#16a34a; --ok-soft:#e8f7ee; --warn:#d97706; --warn-soft:#fdf1e2;
+    --bad:#dc2626; --bad-soft:#fdecec; --shadow:0 8px 24px rgba(28,35,64,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.7;padding-bottom:60px}
+  .wrap{max-width:960px;margin:0 auto;padding:0 20px}
+
+  .hero{padding:40px 0 8px;text-align:center}
+  .hero h1{font-size:28px;font-weight:800;letter-spacing:-.5px}
+  .grad{background:linear-gradient(90deg,var(--brand),var(--brand-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero .sub{color:var(--muted);font-size:14px;margin-top:8px}
+  .tpl-badge{display:inline-block;margin-top:14px;font-size:12.5px;padding:5px 14px;border-radius:999px;
+    background:var(--brand-soft);color:var(--brand);font-weight:700}
+
+  /* 用户提问卡片 */
+  .ask{margin:28px 0 8px;background:linear-gradient(135deg,var(--brand),var(--brand-2));border-radius:16px;padding:20px 24px;color:#fff}
+  .ask .label{font-size:12px;opacity:.85;font-weight:700;letter-spacing:1px}
+  .ask .q{font-size:17px;font-weight:700;margin-top:6px}
+  .ask .meta{font-size:13px;opacity:.9;margin-top:8px}
+
+  /* 步骤 */
+  .step{margin:22px 0}
+  .step-head{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+  .step-num{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand-2));
+    color:#fff;display:grid;place-items:center;font-weight:800;font-size:16px;flex:none}
+  .step-head h2{font-size:19px;font-weight:800}
+  .step-head .tag{font-size:12px;color:var(--muted)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:20px 22px;margin-bottom:12px}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:10px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:12px;color:var(--muted);font-weight:700;background:var(--bg)}
+  tr:last-child td{border-bottom:none}
+  .muted{color:var(--muted);font-size:12px}
+  .badge{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:6px;font-weight:700;white-space:nowrap}
+  .b-ok{background:var(--ok-soft);color:var(--ok)}
+  .b-warn{background:var(--warn-soft);color:var(--warn)}
+  .b-bad{background:var(--bad-soft);color:var(--bad)}
+  .b-brand{background:var(--brand-soft);color:var(--brand)}
+
+  .scorebar{height:8px;background:var(--line);border-radius:999px;overflow:hidden;min-width:80px}
+  .scorebar i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),var(--brand-2))}
+
+  /* 需求画像 */
+  .profile{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:14px}
+  @media(max-width:640px){.profile{grid-template-columns:1fr}}
+  .profile .item{background:var(--bg);border-radius:10px;padding:10px 14px}
+  .profile .item b{color:var(--brand)}
+
+  .callout{border-left:3px solid var(--brand);background:var(--brand-soft);border-radius:0 10px 10px 0;padding:12px 16px;font-size:13.5px;margin-top:14px}
+  .callout.warn{border-color:var(--warn);background:var(--warn-soft)}
+  .callout.bad{border-color:var(--bad);background:var(--bad-soft)}
+  .callout b{display:block;margin-bottom:2px}
+
+  ul{padding-left:20px}
+  li{margin:5px 0}
+
+  /* 6 维度对比 */
+  .vs-title{display:flex;gap:14px;font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:700}
+  .vs-title b{color:var(--ink)}
+  .dim-table td:first-child{font-weight:700;white-space:nowrap}
+  .dim-bar{height:24px;border-radius:8px;overflow:hidden;background:var(--bg);display:flex;min-width:220px}
+  .dim-bar .a{background:linear-gradient(90deg,var(--brand),var(--brand-2));color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;padding-left:8px}
+  .dim-bar .b{background:#e0e4f0;color:var(--ink);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:flex-end;padding-right:8px}
+  .win{font-weight:800;color:var(--ok)}
+
+  /* 推荐卡 */
+  .rec{display:flex;flex-direction:column;gap:12px}
+  .rec-item{border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .rec-item.gold{border-color:#fbbf24;background:#fffcf3}
+  .rec-item.silver{border-color:#c7d2fe;background:#fafaff}
+  .rec-item.avoid{border-color:#fca5a5;background:#fff7f7}
+  .rec-item .top{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+  .rec-item .medal{font-size:20px}
+  .rec-item b{font-size:15px}
+  .rec-item p{font-size:13.5px;color:var(--muted)}
+  .rec-item .why{color:var(--ink)}
+
+  .foot{text-align:center;color:var(--muted);font-size:12.5px;margin-top:36px;padding-top:20px;border-top:1px solid var(--line)}
+  h3.small{font-size:14px;margin:12px 0 6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <h1>🛒 <span class="grad">AI 购物决策助手</span></h1>
+    <div class="sub">5 步流水线 · 安全优先 · 不编价格 · 太完美反而假</div>
+    <div class="tpl-badge">📋 模范回答模板 · 示例：主动降噪头戴式耳机</div>
+  </div>
+
+  <!-- 用户提问 -->
+  <div class="ask">
+    <div class="label">用户提问</div>
+    <div class="q">「我想买个主动降噪头戴式耳机，预算 2000 左右，通勤地铁用，最在意降噪效果和戴着舒不舒服。」</div>
+    <div class="meta">品类：头戴式降噪耳机 ｜ 谁用：自己 ｜ 场景：地铁通勤 + 办公室 ｜ 频率：每天约 2 小时 ｜ 预算：¥2000 左右</div>
+  </div>
+
+  <!-- ① 需求深挖 -->
+  <div class="step">
+    <div class="step-head"><div class="step-num">1</div><h2>需求深挖</h2><span class="tag">不急着推产品，先问对人</span></div>
+    <div class="card">
+      <div class="profile">
+        <div class="item"><b>谁用</b>　自己（通勤 + 办公）</div>
+        <div class="item"><b>放哪儿</b>　地铁 / 工位，需要便携</div>
+        <div class="item"><b>多久一次</b>　每天约 2 小时（高频 → 质量优先）</div>
+        <div class="item"><b>预算上限</b>　¥2000 左右，可小幅上浮</div>
+      </div>
+      <div class="callout">
+        <b>💡 帮你想到没想到的</b>
+        ① <b>该不该买</b>：通勤降噪是刚需，✅ 合理，继续。<br>
+        ② <b>场景坑</b>：地铁环境低频噪音重，选<b>主动降噪（ANC）</b>而不是只有物理隔音；通勤要能<b>折叠收纳</b>；办公常接电话 → 看重<b>通话降噪</b>。<br>
+        ③ <b>安全/品质等级</b>：数码 3C → 走完整筛选，需查第三方测评（RTINGS/Wirecutter）+ 独立口碑，不信软广榜单。
+      </div>
+    </div>
+  </div>
+
+  <!-- ② 产品筛选 -->
+  <div class="step">
+    <div class="step-head"><div class="step-num">2</div><h2>产品筛选</h2><span class="tag">搜 → 筛 → 打分排名 → 单独挖差评</span></div>
+    <div class="card">
+      <h3 class="small">候选打分排名（综合 参数 / 行业知识 / 安全记录 / 用户评价）</h3>
+      <table>
+        <thead><tr><th>候选</th><th>参考价</th><th>销量</th><th>评分</th><th>安全核查</th><th>结论</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><b>索尼 WH-1000XM5</b><br><span class="muted">主动降噪 · 京东自营</span></td>
+            <td>¥1,899</td><td>50万+</td>
+            <td><div class="scorebar"><i style="width:94%"></i></div><span class="muted">9.4</span></td>
+            <td><span class="badge b-ok">✅ 无负面</span></td>
+            <td><span class="badge b-ok">推荐</span></td>
+          </tr>
+          <tr>
+            <td><b>Bose QC Ultra</b><br><span class="muted">主动降噪 · 天猫旗舰</span></td>
+            <td>¥2,499</td><td>20万+</td>
+            <td><div class="scorebar"><i style="width:90%"></i></div><span class="muted">9.0</span></td>
+            <td><span class="badge b-ok">✅ 无负面</span></td>
+            <td><span class="badge b-brand">备选</span></td>
+          </tr>
+          <tr>
+            <td><b>森海塞尔 Momentum 4</b><br><span class="muted">音质见长 · 京东自营</span></td>
+            <td>¥1,999</td><td>8万+</td>
+            <td><div class="scorebar"><i style="width:86%"></i></div><span class="muted">8.6</span></td>
+            <td><span class="badge b-ok">✅ 无负面</span></td>
+            <td><span class="badge b-brand">备选</span></td>
+          </tr>
+          <tr>
+            <td><b>某白牌「降噪Pro」</b><br><span class="muted">拼多多 · 好评千篇一律</span></td>
+            <td>¥399</td><td>10万+</td>
+            <td><div class="scorebar"><i style="width:55%"></i></div><span class="muted">5.5</span></td>
+            <td><span class="badge b-warn">⚠️ 疑似刷评</span></td>
+            <td><span class="badge b-bad">避雷</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="callout bad">
+        <b>🔍 差评专项（和好评分开挖）</b>
+        规则：<b>太完美反而假</b> —— 差评率异常低、好评千篇一律、晒图雷同、时间集中 → 标「疑似刷评」降权。
+      </div>
+      <ul style="font-size:13.5px;margin-top:10px">
+        <li><b>索尼 XM5</b> 高频差评：头梁偏紧（长戴夹头，约 15% 提及）｜通话降噪一般｜不支持折叠，收纳略大。</li>
+        <li><b>Bose QC Ultra</b> 高频差评：价格偏高｜App 偶尔断连（少数反馈）｜耳罩海绵易老化。</li>
+        <li><b>森海 M4</b> 高频差评：降噪弱于前两者｜机身偏大｜固件偶发 bug。</li>
+        <li><b>白牌「降噪Pro」</b> ⚠️ 差评率异常低（0.3%）、五星好评一句话、晒图雷同 → <b>疑似刷评，直接降权</b>。</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ③ 深度对比 -->
+  <div class="step">
+    <div class="step-head"><div class="step-num">3</div><h2>深度对比</h2><span class="tag">6 维度面对面拆解，每个维度给明确优胜方</span></div>
+    <div class="card">
+      <div class="vs-title"><span><b>🅐 索尼 WH-1000XM5</b></span><span>vs</span><span><b>🅑 Bose QC Ultra</b></span></div>
+      <table class="dim-table">
+        <thead><tr><th style="width:64px">维度</th><th>拆什么</th><th style="width:240px">对比</th><th>优胜方</th></tr></thead>
+        <tbody>
+          <tr><td>质量</td><td>材质 / 品控 / 耐用 / 故障率</td><td><div class="dim-bar"><div class="a" style="width:54%">索尼 54</div><div class="b" style="width:46%">46</div></div></td><td><span class="win">索尼 ✅</span></td></tr>
+          <tr><td>功能</td><td>降噪深度 / 通话 / 多设备</td><td><div class="dim-bar"><div class="a" style="width:52%">52</div><div class="b" style="width:48%">48</div></div></td><td><span class="win">索尼 ✅</span></td></tr>
+          <tr><td>质价比</td><td>同功能下的价格</td><td><div class="dim-bar"><div class="a" style="width:62%">62</div><div class="b" style="width:38%">38</div></div></td><td><span class="win">索尼 ✅</span></td></tr>
+          <tr><td>口碑</td><td>真实评价 / 追评兑现 / 刷评嫌疑</td><td><div class="dim-bar"><div class="a" style="width:50%">50</div><div class="b" style="width:50%">50</div></div></td><td><span class="win">打平 ⚖️</span></td></tr>
+          <tr><td>售后</td><td>退换 / 保修 / 客服 / 平台</td><td><div class="dim-bar"><div class="a" style="width:47%">47</div><div class="b" style="width:53%">53</div></div></td><td><span class="win">Bose ✅</span></td></tr>
+          <tr><td>设计</td><td>佩戴舒适 / 便携 / 颜值</td><td><div class="dim-bar"><div class="a" style="width:48%">48</div><div class="b" style="width:52%">52</div></div></td><td><span class="win">Bose ✅</span></td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <b>🧭 按场景给建议</b>
+        通勤多、预算敏感 → 选 <b>索尼 XM5</b>（降噪第一梯队 + 便宜 600，质价比更优）；家里固定用、长戴看重舒适和售后 → 选 <b>Bose QC Ultra</b>。不是「各有千秋」，是按你的场景给唯一方向。
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ 渠道比价 -->
+  <div class="step">
+    <div class="step-head"><div class="step-num">4</div><h2>渠道比价</h2><span class="tag">京东 / 天猫 / 拼多多 / 淘宝 · 搜不到就直说，不编价</span></div>
+    <div class="card">
+      <table>
+        <thead><tr><th>平台 / 店铺</th><th>到手价</th><th>店铺评分</th><th>物流</th><th>退换</th><th>备注</th></tr></thead>
+        <tbody>
+          <tr><td>京东 索尼自营</td><td><b>¥1,899</b></td><td>—</td><td>211 限时达</td><td>7 天无理由</td><td>自营，最稳</td></tr>
+          <tr><td>天猫 索尼旗舰</td><td><b>¥1,799</b></td><td>4.9</td><td>顺丰 2 天</td><td>7 天无理由</td><td>便宜 100，店铺老</td></tr>
+          <tr><td>拼多多 某店</td><td><span class="badge b-bad">未抓取到</span></td><td>—</td><td>—</td><td>—</td><td class="muted">浏览器被拦，不编价</td></tr>
+          <tr><td>淘宝 C 店</td><td><span class="badge b-warn">未抓取到</span></td><td>—</td><td>—</td><td>—</td><td class="muted">浏览器被拦，不编价</td></tr>
+        </tbody>
+      </table>
+      <div class="callout warn">
+        <b>📱 重要提醒：核对到手价</b>
+        网页标价 ≠ 领券后到手价，且跨账号 / 地区有差异。<b>下单前请打开 App 核对最终到手价</b>。拼多多 / 淘宝本次未抓取到真实价，直说「搜不到」，不编。
+      </div>
+      <div class="callout">
+        <b>🏆 渠道结论</b>
+        求性价比 → <b>天猫索尼旗舰 ¥1,799</b>；求最稳 → <b>京东自营 ¥1,899</b>（不差 100 就京东）。拼多多 / 淘宝需你截图补比。
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑤ 报告生成 -->
+  <div class="step">
+    <div class="step-head"><div class="step-num">5</div><h2>报告生成</h2><span class="tag">推荐哪个、备选哪个、为什么 —— 写明白，不甩「都可以」</span></div>
+    <div class="card">
+      <div class="rec">
+        <div class="rec-item gold">
+          <div class="top"><span class="medal">🥇</span><b>首选：索尼 WH-1000XM5</b><span class="badge b-brand">@ 天猫旗舰 ¥1,799</span></div>
+          <p class="why"><b>为什么是它：</b>降噪第一梯队（RTINGS 长期榜首）、比 Bose 便宜 600 质价比更高、京东自营 50 万+ 销量口碑稳。匹配你「通勤降噪 + 预算 2000」的第一痛点。</p>
+          <p class="muted">👉 购买链接（示例）：天猫索尼官方旗舰店</p>
+        </div>
+        <div class="rec-item silver">
+          <div class="top"><span class="medal">🥈</span><b>备选：Bose QC Ultra</b><span class="badge b-brand">@ 京东自营 ¥2,499</span></div>
+          <p class="why"><b>如果</b>你更看重佩戴舒适度和售后、且预算能上浮 500 → 选它。长戴更轻、售后更省心，家里固定用更合适。</p>
+          <p class="muted">👉 购买链接（示例）：京东 Bose 自营</p>
+        </div>
+        <div class="rec-item avoid">
+          <div class="top"><span class="medal">⚠️</span><b>避雷：某白牌「降噪Pro」</b></div>
+          <p>差评率异常低 + 好评千篇一律 + 晒图雷同，疑似刷评；价格过低偏离市场均价。<b>不建议</b>，不给购买链接。</p>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="callout">
+        <b>📋 决策建议</b>
+        按你的痛点优先级（降噪 &gt; 舒适 &gt; 预算），<b>索尼 XM5</b> 口碑最稳、性价比最高，是明确首选；只有「舒适/售后」权重明显高于「预算」时才换 <b>Bose</b>。下单前回 App 核对到手价。
+      </div>
+      <h3 class="small">风险提示</h3>
+      <ul style="font-size:13.5px">
+        <li>索尼 XM5 头梁偏紧，头大或长戴需试戴确认。</li>
+        <li>XM5 不支持折叠，收纳体积比前代略大。</li>
+        <li>Bose 价格偏高，耳罩海绵长期使用易老化（可单独更换）。</li>
+      </ul>
+      <h3 class="small">Sources（分层）</h3>
+      <ul style="font-size:12.5px;color:var(--muted)">
+        <li>⭐ 关键证据：RTINGS 降噪耳机横评、Wirecutter 最佳降噪耳机（独立测评源）</li>
+        <li>京东自营 / 天猫旗舰商品页评价区（差评 + 追评抽样）</li>
+        <li>⚠️ 某「十大降噪耳机」榜单 —— 软广浓度高，仅交叉验证</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="foot">
+    📋 本页为「AI 购物决策助手」的<b>模范回答模板</b>（示例品类：降噪耳机，数据为演示用参考价，以 App 实际到手价为准）。<br>
+    用 Claude Code 跑 <a href="SKILL.md" style="color:var(--brand)">SKILL.md</a> 即可针对任意品类真实执行 5 步流程。
+  </div>
+</div>
+</body>
+</html>
